@@ -1,0 +1,6 @@
+{
+  "name": "Poetry Analyzer & Translator",
+  "description": "An interactive, dark-mode poetry analysis workspace that provides line-by-line AI insights, translation across multiple languages, poetic device highlighting, and interactive Q&A.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
