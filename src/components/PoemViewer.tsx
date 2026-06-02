@@ -249,8 +249,6 @@ export default function PoemViewer({
   const [videoUrlInput, setVideoUrlInput] = useState<string>("");
   const [backdropOpacity, setBackdropOpacity] = useState<number>(30); // 0 - 100
   const [backdropBlur, setBackdropBlur] = useState<number>(3); // 0 - 20
-  const [dragActive, setDragActive] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Audio / Synth / reading states
   const [soundscapeType, setSoundscapeType] = useState<"none" | "drone" | "rain" | "bells">("none");
@@ -323,21 +321,6 @@ export default function PoemViewer({
     }
   }, [isPlaying]);
 
-  // Helper to detect if a file is a video
-  const isVideoFile = (file: File) => {
-    if (file.type && file.type.startsWith("video/")) return true;
-    const name = (file.name || "").toLowerCase();
-    return (
-      name.endsWith(".mp4") ||
-      name.endsWith(".webm") ||
-      name.endsWith(".ogg") ||
-      name.endsWith(".mov") ||
-      name.endsWith(".m4v") ||
-      name.endsWith(".avi") ||
-      name.endsWith(".mkv")
-    );
-  };
-
   // Helper to construct YouTube Embed URLs with silent background playback
   const getYouTubeEmbedUrl = (url: string) => {
     if (!url) return null;
@@ -387,42 +370,6 @@ export default function PoemViewer({
       return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1`;
     }
     return null;
-  };
-
-  // Handle Drag Events for video file upload
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (isVideoFile(file)) {
-        const url = URL.createObjectURL(file);
-        setCustomVideoUrl(url);
-        setBackdropType("custom");
-      }
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (isVideoFile(file)) {
-        const url = URL.createObjectURL(file);
-        setCustomVideoUrl(url);
-        setBackdropType("custom");
-      }
-    }
   };
 
   const renderBackdropStyle = () => {
@@ -670,25 +617,10 @@ export default function PoemViewer({
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
       {/* LEFT COLUMN: Animated Poem Theater */}
       <div 
-        onDragEnter={handleDrag}
-        onDragOver={handleDrag}
-        onDragLeave={handleDrag}
-        onDrop={handleDrop}
-        className={`rounded-xl border border-stone-800 p-5 sm:p-7 shadow-2xl lg:col-span-7 flex flex-col justify-between h-[620px] relative overflow-hidden isolate transition-all duration-300 ${
-          dragActive ? "border-amber-400 bg-amber-950/20 scale-[1.01]" : "bg-transparent"
-        }`}
+        className="rounded-xl border border-stone-800 p-5 sm:p-7 shadow-2xl lg:col-span-7 flex flex-col justify-between h-[620px] relative overflow-hidden isolate transition-all duration-300 bg-transparent"
       >
         {/* Render Background Backdrop Loop */}
         {renderBackdropStyle()}
-
-        {/* Drag and Drop Hover Visual Layer */}
-        {dragActive && (
-          <div className="absolute inset-0 z-30 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center border-2 border-dashed border-amber-400 m-3.5 rounded-lg pointer-events-none">
-            <Upload className="h-10 w-10 text-amber-300 animate-bounce mb-3" />
-            <p className="text-sm font-mono text-stone-200">Drop Video File to Backdrop</p>
-            <p className="text-[10px] font-mono text-stone-500 mt-1 uppercase tracking-wider">MP4, WebM formats supported</p>
-          </div>
-        )}
 
         {/* Header toolbar */}
         <div className="flex items-center justify-between border-b border-stone-900 pb-3 flex-wrap gap-2 z-10">
@@ -893,32 +825,6 @@ export default function PoemViewer({
                             className="bg-amber-200 hover:bg-amber-100 text-stone-950 text-[10px] font-mono px-3 py-1.5 rounded uppercase font-bold cursor-pointer shrink-0"
                           >
                             Load
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-4 border-t border-stone-850 pt-2.5">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[9px] font-mono uppercase text-stone-400 tracking-wider">
-                            Or upload a local video file
-                          </span>
-                          <span className="text-[8px] text-stone-500 font-mono uppercase">
-                            Supports drag-and-drop over theater
-                          </span>
-                        </div>
-                        <div>
-                          <input
-                            type="file"
-                            ref={fileInputRef}
-                            accept="video/*"
-                            onChange={handleFileSelect}
-                            className="hidden"
-                          />
-                          <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="bg-stone-900 border border-stone-800 hover:border-stone-700 text-stone-300 hover:text-stone-100 text-[10px] font-mono px-3 py-1.5 rounded uppercase flex items-center gap-1 cursor-pointer"
-                          >
-                            <Upload className="h-3 w-3" /> Select File
                           </button>
                         </div>
                       </div>
