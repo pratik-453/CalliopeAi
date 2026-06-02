@@ -244,9 +244,7 @@ export default function PoemViewer({
   const [activeStudioTab, setActiveStudioTab] = useState<"typography" | "backdrop" | "audio">("typography");
   
   // Backdrops states
-  const [backdropType, setBackdropType] = useState<"none" | "nebula" | "digital" | "custom">("none");
-  const [customVideoUrl, setCustomVideoUrl] = useState<string>("");
-  const [videoUrlInput, setVideoUrlInput] = useState<string>("");
+  const [backdropType, setBackdropType] = useState<"none" | "nebula" | "digital">("none");
   const [backdropOpacity, setBackdropOpacity] = useState<number>(30); // 0 - 100
   const [backdropBlur, setBackdropBlur] = useState<number>(3); // 0 - 20
 
@@ -321,103 +319,11 @@ export default function PoemViewer({
     }
   }, [isPlaying]);
 
-  // Helper to construct YouTube Embed URLs with silent background playback
-  const getYouTubeEmbedUrl = (url: string) => {
-    if (!url) return null;
-    let videoId = null;
-    try {
-      const trimmed = url.trim();
-      if (trimmed.includes("youtu.be/")) {
-        const parts = trimmed.split("youtu.be/");
-        if (parts[1]) {
-          videoId = parts[1].split(/[?#&]/)[0];
-        }
-      } else if (trimmed.includes("youtube.com/shorts/")) {
-        const parts = trimmed.split("youtube.com/shorts/");
-        if (parts[1]) {
-          videoId = parts[1].split(/[?#&]/)[0];
-        }
-      } else if (trimmed.includes("youtube.com/embed/")) {
-        const parts = trimmed.split("youtube.com/embed/");
-        if (parts[1]) {
-          videoId = parts[1].split(/[?#&]/)[0];
-        }
-      } else if (trimmed.includes("watch?v=")) {
-        const parts = trimmed.split("watch?v=");
-        if (parts[1]) {
-          videoId = parts[1].split(/[?#&]/)[0];
-        }
-      } else {
-        const regExp = /^.*(v\/|u\/\w\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = trimmed.match(regExp);
-        if (match && match[2] && match[2].length === 11) {
-          videoId = match[2];
-        } else {
-          const urlObj = new URL(trimmed);
-          videoId = urlObj.searchParams.get("v");
-        }
-      }
-    } catch (e) {
-      // Fallback regex selector for standard video formats
-      const reg = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
-      const match = url.match(reg);
-      if (match) {
-        videoId = match[1];
-      }
-    }
-
-    if (videoId && videoId.length === 11) {
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1`;
-    }
-    return null;
-  };
-
   const renderBackdropStyle = () => {
     return (
       <>
         {/* Base dark backdrop background container */}
         <div className="absolute inset-0 bg-[#0e0e0e] -z-25 pointer-events-none" />
-
-        {/* Dynamic theme layer */}
-        {backdropType === "custom" && customVideoUrl && (() => {
-          const ytEmbedUrl = getYouTubeEmbedUrl(customVideoUrl);
-          if (ytEmbedUrl) {
-            return (
-              <div 
-                className="absolute inset-0 w-full h-full pointer-events-none -z-10 overflow-hidden"
-                style={{
-                  opacity: backdropOpacity / 100,
-                }}
-              >
-                <iframe
-                  src={ytEmbedUrl}
-                  title="Ambient YouTube backdrops"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  className="absolute w-[300vw] h-[300vh] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                  style={{
-                    filter: `blur(${backdropBlur}px)`,
-                  }}
-                />
-              </div>
-            );
-          }
-
-          return (
-            <video
-              src={customVideoUrl}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-500 -z-10"
-              style={{
-                opacity: backdropOpacity / 100,
-                filter: `blur(${backdropBlur}px)`,
-              }}
-            />
-          );
-        })()}
 
         {backdropType === "nebula" && (
           <div 
@@ -780,12 +686,11 @@ export default function PoemViewer({
               {/* Tab Content 2: Atmospheric Backdrop Visual Modifiers */}
               {activeStudioTab === "backdrop" && (
                 <div className="space-y-3.5 w-full">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {[
                       { type: "none", label: "Clean Slate" },
                       { type: "nebula", label: "Nebula Glow" },
-                      { type: "digital", label: "Moving Beam" },
-                      { type: "custom", label: "Custom Video 🎥" }
+                      { type: "digital", label: "Moving Beam" }
                     ].map((b) => (
                       <button
                         key={b.type}
@@ -800,36 +705,6 @@ export default function PoemViewer({
                       </button>
                     ))}
                   </div>
-
-                  {backdropType === "custom" && (
-                    <div className="rounded border border-stone-850 bg-black/60 p-3 space-y-3 transition-all">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[9px] font-mono uppercase text-stone-400 tracking-wider">
-                          Video link (YouTube link or MP4/WebM URL)
-                        </label>
-                        <div className="flex gap-1.5">
-                          <input
-                            type="text"
-                            value={videoUrlInput}
-                            onChange={(e) => setVideoUrlInput(e.target.value)}
-                            placeholder="https://www.youtube.com/watch?v=... or .mp4 URL"
-                            className="bg-stone-900 border border-stone-800 rounded px-2.5 py-1.5 text-xs text-stone-300 flex-1 focus:outline-none focus:border-amber-500 placeholder:text-stone-700 font-mono"
-                          />
-                          <button
-                            onClick={() => {
-                              if (videoUrlInput.trim()) {
-                                setCustomVideoUrl(videoUrlInput);
-                                setBackdropType("custom");
-                              }
-                            }}
-                            className="bg-amber-200 hover:bg-amber-100 text-stone-950 text-[10px] font-mono px-3 py-1.5 rounded uppercase font-bold cursor-pointer shrink-0"
-                          >
-                            Load
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {backdropType !== "none" && (
                     <div className="space-y-2 border-t border-stone-900/60 pt-2 flex flex-col sm:flex-row gap-4 items-center justify-between">

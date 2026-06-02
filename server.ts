@@ -63,9 +63,9 @@ async function generateContentWithFallback(params: {
   defaultModel?: string;
 }) {
   const modelsToTry = [
-    params.defaultModel || "gemini-3.5-flash",
-    "gemini-flash-latest",
-    "gemini-3.1-flash-lite"
+    params.defaultModel || "gemini-3.1-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-flash-latest"
   ];
 
   let lastError: any = null;
@@ -96,9 +96,9 @@ async function sendMessageWithFallback(params: {
   defaultModel?: string;
 }) {
   const modelsToTry = [
-    params.defaultModel || "gemini-3.5-flash",
-    "gemini-flash-latest",
-    "gemini-3.1-flash-lite"
+    params.defaultModel || "gemini-3.1-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-flash-latest"
   ];
 
   let lastError: any = null;
@@ -176,6 +176,7 @@ Ensure the final JSON responds exactly to the schema specified, containing high-
         contents: prompt,
         config: {
           responseMimeType: "application/json",
+          temperature: 0.1,
           responseSchema: {
             type: Type.OBJECT,
             properties: {
