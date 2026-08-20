@@ -391,18 +391,40 @@ export default function PoemViewer({
     };
   }, [isPlaying, playbackSpeed, totalLines]);
 
-  // Auto-scroll logic to keep the active line centered
+  const isManualScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-scroll logic to keep the active line centered during playback, while respecting manual mouse wheel scroll
   useEffect(() => {
+    // If user is actively scrolling with mouse wheel, do not hijack or fight their scroll position
+    if (isManualScrollingRef.current) return;
+
     const activeEl = document.getElementById(`poem-line-${selectedLineIndex}`);
     if (activeEl && scrollContainerRef.current) {
       const container = scrollContainerRef.current;
       const topOffset = activeEl.offsetTop - container.offsetTop - (container.clientHeight / 2) + (activeEl.clientHeight / 2);
       container.scrollTo({
         top: Math.max(0, topOffset),
-        behavior: "smooth"
+        behavior: isPlaying ? "smooth" : "smooth"
       });
     }
-  }, [selectedLineIndex]);
+  }, [selectedLineIndex, isPlaying]);
+
+  const handleContainerScroll = () => {
+    isManualScrollingRef.current = true;
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      isManualScrollingRef.current = false;
+    }, 1200);
+  };
+
+  const handleWheelOnPoemStage = (e: React.WheelEvent<HTMLDivElement>) => {
+    isManualScrollingRef.current = true;
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      isManualScrollingRef.current = false;
+    }, 1200);
+  };
 
   const togglePlay = () => setIsPlaying(!isPlaying);
   const resetPlayback = () => {
@@ -535,6 +557,11 @@ export default function PoemViewer({
             <span className="font-mono text-[10px] text-stone-300 uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded border border-stone-900/60 font-medium">
               Manuscript Stage — Theater Mode
             </span>
+            {analysis.isInstantFallback && (
+              <span className="font-mono text-[9px] text-amber-300/80 bg-amber-950/20 px-2 py-0.5 rounded border border-amber-800/40 uppercase tracking-wider">
+                Instant Mode
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -854,11 +881,13 @@ export default function PoemViewer({
         {/* Scrollable Poem Text Stage */}
         <div 
           ref={scrollContainerRef}
-          className="my-3 flex-1 overflow-y-auto pr-2 space-y-3 relative"
+          onScroll={handleContainerScroll}
+          onWheel={handleWheelOnPoemStage}
+          className="my-3 flex-1 overflow-y-auto pr-2 space-y-2.5 relative overscroll-contain select-none scroll-smooth"
           style={{ minHeight: "180px" }}
         >
           {/* Fading overlay at top and bottom */}
-          <div className="pointer-events-none absolute left-0 top-0 z-10 h-8 w-full bg-gradient-to-b from-[#0e0e0e]/30 to-transparent"></div>
+          <div className="pointer-events-none sticky left-0 top-0 z-10 h-6 w-full bg-gradient-to-b from-[#0e0e0e] to-transparent"></div>
           
           {analysis.lines.map((line, index) => {
             const isSelected = selectedLineIndex === index;
@@ -872,15 +901,10 @@ export default function PoemViewer({
                   setIsPlaying(false);
                   onSelectLine(index);
                 }}
-                onMouseEnter={() => {
-                  if (!isPlaying) {
-                    onSelectLine(index);
-                  }
-                }}
-                className={`group relative cursor-pointer rounded p-3 transition-all duration-300 select-none ${
+                className={`group relative cursor-pointer rounded p-3 transition-all duration-200 select-none ${
                   isSelected
-                    ? "bg-amber-500/5 border-l-2 border-amber-500/80 pl-4 shadow-[0_1px_8px_rgba(0,0,0,0.2)]"
-                    : "border-l-2 border-transparent hover:border-stone-700 hover:bg-[#141414]/25 pl-4 text-stone-400 hover:text-stone-200"
+                    ? "bg-amber-500/10 border-l-2 border-amber-500 pl-4 shadow-[0_1px_8px_rgba(0,0,0,0.3)]"
+                    : "border-l-2 border-transparent hover:border-stone-700 hover:bg-[#141414]/40 pl-4 text-stone-400 hover:text-stone-200"
                 }`}
               >
                 {/* Micro device pill indicator on hover or selected */}
@@ -985,9 +1009,18 @@ export default function PoemViewer({
       {/* RIGHT COLUMN: Line Insight Observatory */}
       <div className="lg:col-span-5 flex flex-col gap-4">
         {/* Active Line Card */}
-        <div className="rounded-xl border border-stone-800 bg-[#0d0d0d] p-6.5 shadow-2xl flex-1 flex flex-col justify-between">
+        <div 
+          onWheel={(e) => {
+            if (e.deltaY > 30) {
+              goNext();
+            } else if (e.deltaY < -30) {
+              goPrev();
+            }
+          }}
+          className="rounded-xl border border-stone-800 bg-[#0d0d0d] p-5 sm:p-6 shadow-2xl flex-1 flex flex-col justify-between max-h-[620px] overflow-y-auto"
+        >
           <div>
-            <div className="flex items-center justify-between border-b border-stone-850 pb-3.5 mb-4">
+            <div className="flex items-center justify-between border-b border-stone-850 pb-3.5 mb-4 sticky top-0 bg-[#0d0d0d]/90 backdrop-blur-sm z-10">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-amber-200 animate-pulse" />
                 <h3 className="font-display text-base font-light italic text-stone-200">
@@ -1010,7 +1043,7 @@ export default function PoemViewer({
               
               {/* Active Subtitle overlay */}
               {langLanguage && currentLine?.text && (
-                <div className="mt-2.5 text-xs text-stone-400 border-t border-stone-903 pt-2 flex items-center gap-2">
+                <div className="mt-2.5 text-xs text-stone-400 border-t border-stone-900/60 pt-2 flex items-center gap-2">
                   <Globe className="h-3.5 w-3.5 text-stone-500 flex-shrink-0" />
                   <span className="font-light">
                     <strong>{langLanguage.language}:</strong>{" "}
@@ -1048,7 +1081,7 @@ export default function PoemViewer({
                   Conceptual Insight
                 </h4>
                 <p className="text-xs text-stone-300 leading-relaxed bg-[#141414] p-3 rounded border border-stone-800/80">
-                  {currentLine?.insight || "Select or hover over an active line in the theater panel to load insights automatically."}
+                  {currentLine?.insight || "Select an active line in the theater panel to load insights automatically."}
                 </p>
               </div>
 
@@ -1066,7 +1099,7 @@ export default function PoemViewer({
 
           <div className="mt-6 border-t border-stone-900 pt-4 text-center">
             <p className="text-[9px] font-mono text-stone-600 uppercase tracking-wider">
-              * Hover/select any verse line in the theater panel to trigger observatory readouts
+              * Click any verse line or scroll wheel to navigate line-by-line metrics
             </p>
           </div>
         </div>

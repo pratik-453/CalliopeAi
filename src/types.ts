@@ -31,6 +31,7 @@ export interface PoemAnalysis {
   poeticDevicesOverall: PoeticDeviceOverall[];
   translations: Translation[];
   lines: PoemLine[];
+  isInstantFallback?: boolean;
 }
 
 export interface ChatMessage {

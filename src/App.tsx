@@ -178,19 +178,29 @@ export default function App() {
         
         {/* Error Banner */}
         {error && (
-          <div className="mb-6 flex items-center justify-between rounded border border-rose-900 bg-rose-950/10 p-4 text-xs font-mono uppercase tracking-wider text-rose-300">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded border border-rose-900/80 bg-rose-950/20 p-4 text-xs font-mono uppercase tracking-wider text-rose-300 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-4 w-4 text-rose-400 flex-shrink-0" />
-              <p>
-                <strong>Analysis Failed:</strong> {error}
+              <p className="leading-relaxed">
+                <span className="font-semibold text-rose-200">Notice:</span> {error}
               </p>
             </div>
-            <button 
-              onClick={() => setError(null)}
-              className="rounded bg-rose-950/20 px-2.5 py-1 text-[10px] border border-rose-800 hover:text-white"
-            >
-              Clear
-            </button>
+            <div className="flex items-center gap-2">
+              {poemText && !isLoading && (
+                <button
+                  onClick={() => handleAnalyze(poemText)}
+                  className="rounded bg-amber-500/10 px-3 py-1.5 text-[10px] font-bold border border-amber-500/30 text-amber-200 hover:bg-amber-500/20 transition-colors uppercase cursor-pointer"
+                >
+                  Retry Analysis
+                </button>
+              )}
+              <button 
+                onClick={() => setError(null)}
+                className="rounded bg-rose-950/30 px-2.5 py-1.5 text-[10px] border border-rose-800/60 hover:text-white transition-colors cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
 
